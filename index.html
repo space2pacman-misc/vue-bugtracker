@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Vue bugtracker</title>
 	<link rel="stylesheet" href="css/uikit.min.css">
 </head>
@@ -46,7 +47,9 @@
 <template id="task-line">
 	<tr>
 	    <td>{{ task.id }}</td>
-	    <td>{{ task.caption }}</td>
+	    <td>
+	    	<router-link :to="'/task/edit/' + task.id">{{ task.caption }}</router-link>
+	    </td>
 	    <td>
 	    	<span class="uk-label" :class="'uk-label-' + task.status.value">{{ task.status.label }}</span>
 	    </td>
@@ -65,6 +68,22 @@
 			</select>
 			<textarea class="uk-margin-small-top uk-textarea" :class="{ 'uk-form-danger': fieldCheck.desc }" rows="5" placeholder="Описание задачи" v-model="content.desc"></textarea>
 			<button class="uk-button uk-button-primary uk-margin-small-top" @click.prevent="addTask">Создать</button>
+		</form>
+	</div>
+</template>
+
+<template id="task-edit">
+	<div>
+		<h3 class="uk-margin-top uk-margin-bottom">Редактировать задачу</h3>
+		<form class="uk-flex uk-flex-wrap uk-flex-right">
+			<input type="text" class="uk-input" :class="{ 'uk-form-danger': fieldCheck.caption }" placeholder="Название задачи" v-model="content.caption">
+			<select class="uk-select uk-margin-small-top" :class="{ 'uk-form-danger': fieldCheck.status }" v-model="statusTask">
+				<option value="" disabled selected>Статус задачи</option>
+				<option value="default/Новая">Новая</option>
+				<option value="success/Готова">Готова</option>
+			</select>
+			<textarea class="uk-margin-small-top uk-textarea" :class="{ 'uk-form-danger': fieldCheck.desc }" rows="5" placeholder="Описание задачи" v-model="content.desc"></textarea>
+			<button class="uk-button uk-button-primary uk-margin-small-top" @click.prevent="updateTask">Редактировать</button>
 		</form>
 	</div>
 </template>
@@ -115,8 +134,6 @@
 
 					this.content.status.value = data[0];
 					this.content.status.label = data[1];
-
-					console.log(this.content.status)
 				}
 			}
 		},
@@ -171,6 +188,62 @@
 		}
 	})
 
+	var taskEdit = Vue.component("task-edit", {
+		template: "#task-edit",
+		data() {
+			return {
+				content: {
+					caption: "",
+					status: {
+						value: "",
+						label: ""
+					},
+					desc: ""
+				},
+				fieldCheck: {
+					caption: false,
+					status: false,
+					desc: false
+				}
+			}
+		},
+		computed: {
+			statusTask: {
+				get() {
+					if(this.content.status.value.length === 0 && this.content.status.label.length === 0) {
+						return "";
+					} else {
+						return `${this.content.status.value}/${this.content.status.label}`
+					}
+				},
+				set(status) {
+					var data = status.split("/");
+
+					this.content.status.value = data[0];
+					this.content.status.label = data[1];
+				}
+			}
+		},
+		methods: {
+			updateTask() {
+				var task = this.$root.tasks[this.$route.params.id - 1];
+
+				task.caption = this.content.caption;
+				task.status.value = this.content.status.value;
+				task.status.label = this.content.status.label;
+				task.desc = this.content.desc;
+			}
+		},
+		created() {
+			var task = this.$root.tasks[this.$route.params.id - 1];
+
+			this.content.caption = task.caption;
+			this.content.status.value = task.status.value;
+			this.content.status.label = task.status.label;
+			this.content.desc = task.desc;
+		}
+	})
+
 	var routes = [
 		{
 			path: "/",
@@ -179,6 +252,10 @@
 		{ 
 			path: '/task/create', 
 			component: taskCreate
+		},
+		{ 
+			path: '/task/edit/:id', 
+			component: taskEdit
 		}
 	]
 
